@@ -15,13 +15,13 @@ export const $params = /*#__PURE__*/ l.params({"space":/*#__PURE__*/ l.string({"
 
 export type $Params = l.InferOutput<typeof $params>;
 
-export const $output = /*#__PURE__*/ l.jsonPayload({"ops":/*#__PURE__*/ l.array(/*#__PURE__*/ l.ref<OpEntry>((() => opEntry) as any), ),"commit":/*#__PURE__*/ l.optional(/*#__PURE__*/ l.ref<SpaceDefs.SignedCommit>((() => SpaceDefs.signedCommit) as any)),"cursor":/*#__PURE__*/ l.optional(/*#__PURE__*/ l.string())});
+export const $output = /*#__PURE__*/ l.jsonPayload({"ops":/*#__PURE__*/ l.array(/*#__PURE__*/ l.ref<OpEntry>((() => opEntry) as any), ),"commit":/*#__PURE__*/ l.optional(/*#__PURE__*/ l.ref<SpaceDefs.Commit>((() => SpaceDefs.commit) as any)),"cursor":/*#__PURE__*/ l.optional(/*#__PURE__*/ l.string())});
 
 export type $Output<B = l.BinaryData> = l.InferPayload<typeof $output, B>;
 export type $OutputBody<B = l.BinaryData> = l.InferPayloadBody<typeof $output, B>;
 
-/** List the operation log for an account's permissioned repo within a space, returning operations after a given revision. Primary incremental sync mechanism. By default each created or updated operation inlines the record's current value; set excludeValues for metadata-only entries. Note the oplog is a transport optimization with no history guarantee: a host may compact it or drop it, and it does not survive account migration, so omitting `since` returns the retained window rather than the repo's full history. Use getRepo for an initial sync or when a `since` revision is no longer available. Callable with either OAuth (for the authenticated user's own data) or a space credential (for syncing services). */
-const main = /*#__PURE__*/ l.query($nsid, $params, $output, ["SpaceNotFound","RepoNotFound","RepoTakendown","RepoSuspended","RepoDeactivated"]);
+/** List the operation log for an account's permissioned repo within a space, returning operations after a given revision. Primary incremental sync mechanism. By default each created or updated operation inlines the record's current value; set excludeValues for metadata-only entries. Note the oplog is a transport optimization with no history guarantee: a host may compact it or drop it, and it does not survive account migration, so omitting `since` returns the retained window rather than the repo's full history. Use getRepo for an initial sync or when a `since` revision is no longer available. Callable with either OAuth (for the authenticated user's own data) or a space credential (for syncing services). When called with a space credential, the caller must send an Atproto-Space-Want-Mac header, and a response that includes the commit carries its MAC in the Atproto-Space-Mac response header. */
+const main = /*#__PURE__*/ l.query($nsid, $params, $output, ["BadSpaceMac","SpaceNotFound","RepoNotFound","RepoTakendown","RepoSuspended","RepoDeactivated"]);
 
 export { main };
 

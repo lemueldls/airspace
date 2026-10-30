@@ -14,7 +14,7 @@ export const $params = /*#__PURE__*/ l.params();
 
 export type $Params = l.InferOutput<typeof $params>;
 
-export const $input = /*#__PURE__*/ l.jsonPayload({"space":/*#__PURE__*/ l.string({"format":"uri"}),"repo":/*#__PURE__*/ l.string({"format":"did"}),"rev":/*#__PURE__*/ l.string({"format":"tid"}),"hash":/*#__PURE__*/ l.bytes()});
+export const $input = /*#__PURE__*/ l.jsonPayload({"space":/*#__PURE__*/ l.string({"format":"uri"}),"repo":/*#__PURE__*/ l.string({"format":"did"}),"repoRev":/*#__PURE__*/ l.string({"format":"tid"}),"data":/*#__PURE__*/ l.bytes(),"spaceRev":/*#__PURE__*/ l.optional(/*#__PURE__*/ l.string({"format":"tid"})),"prevSpaceRev":/*#__PURE__*/ l.optional(/*#__PURE__*/ l.string({"format":"tid"}))});
 
 export type $Input<B = l.BinaryData> = l.InferPayload<typeof $input, B>;
 export type $InputBody<B = l.BinaryData> = l.InferPayloadBody<typeof $input, B>;
@@ -24,8 +24,8 @@ export const $output = /*#__PURE__*/ l.payload();
 export type $Output<B = l.BinaryData> = l.InferPayload<typeof $output, B>;
 export type $OutputBody<B = l.BinaryData> = l.InferPayloadBody<typeof $output, B>;
 
-/** Notify that a repo in a space has advanced to a new revision. Sent by a repo host to the space host, and forwarded to registered syncers. Best-effort. Authenticated with service auth. */
-const main = /*#__PURE__*/ l.procedure($nsid, $params, $input, $output);
+/** Notify that a repo in a space has advanced. Repo hosts reliably deliver their latest state to the space host, which sequences updates and forwards them to registered syncers with reasonable-effort delivery. Authenticated with service auth. */
+const main = /*#__PURE__*/ l.procedure($nsid, $params, $input, $output, ["SpaceNotFound","FutureRev"]);
 
 export { main };
 

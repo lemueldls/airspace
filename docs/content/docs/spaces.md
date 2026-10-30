@@ -32,21 +32,45 @@ Without support, a space call throws [`SpacesUnsupportedError`](/docs/errors).
 
 ## managing a space
 
-`airspace.workspace.manage` creates a space and sets who can see it. Reading and writing are set separately, each to `'public'`, `'member-list'` or `{ managingApp: did }`:
+`airspace.workspace.manage` creates a space and sets its policy. A space has one `policy`, not separate read and write policies:
 
 ```ts
-await airspace.workspace.manage.ensure({ read: 'member-list', write: 'member-list', appAccess: 'open' })
-await airspace.workspace.manage.update({ read: 'public' })
+import type { SpacePolicyDetail } from 'airspace'
+
+const policy: SpacePolicyDetail = {
+  type: 'memberspace',
+  publicRead: false,
+  publicWrite: false,
+  publishMembers: true,
+}
+
+await airspace.workspace.manage.ensure({ policy })
+await airspace.workspace.manage.update({ policy: { ...policy, publicRead: true } })
 await airspace.workspace.manage.members.add(did) // read and write, unless you pass { read, write }
 await airspace.workspace.manage.members.list() // [{ did, read, write }]
+await airspace.workspace.manage.removeWriter(did) // drop the repo from listRepos
+await airspace.workspace.manage.clearRecords() // empty this account's repo in the space
 
 await airspace.workspace.manage.exists() // is the space there at all?
-await airspace.workspace.manage.info() // how is it configured? `null` until `ensure()`
+await airspace.workspace.manage.info() // `null` until `ensure()`
 ```
 
-You only need `ensure()` for a shared space. Writing to your own space creates it but leaves it unconfigured.
+The `read`, `write`, and `appAccess` options map onto the current policy:
 
-Over OAuth each operation is a separate grant, asked for with `manage` in [`scopesFor`](/docs/oauth): `update()` and a second `ensure()` need `update`, and `delete()` needs `delete`.
+```ts
+await airspace.workspace.manage.ensure({
+  read: 'member-list',
+  write: 'member-list',
+  appAccess: 'open',
+  publishMembers: true,
+})
+```
+
+`type: 'memberspace'` is the shared-space policy. Set `publicRead` or `publicWrite` to open that side to anyone. `publishPolicy` and `publishMembers` write the policy and member list into the authority's space repo so readers and syncers can discover them. The other normalized types are `personalspace` (only the authority) and `managedspace` (each access decision goes to a managing app). Their wire types are `com.atproto.personalspace.policy` and `com.atproto.managedspace.policy`.
+
+Call `ensure()` before writing. The current alpha creates the space and its repo together, so a write does not create an unconfigured space as a side effect.
+
+Over OAuth each operation is a separate grant, asked for with `manage` in [`scopesFor`](/docs/oauth): `update()`, `members.add()`, `members.remove()`, and `removeWriter()` need `update`, and `delete()` needs `delete`.
 
 > [!WARNING]
 > Blobs uploaded into a space are currently readable through the public `sync.getBlob` endpoint ([atproto#5435](https://github.com/bluesky-social/atproto/issues/5435)). Don't put images in a space that you'd mind being seen.

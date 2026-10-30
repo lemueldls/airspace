@@ -10,7 +10,7 @@ type $nsid = typeof $nsid;
 
 export { $nsid };
 
-export const $params = /*#__PURE__*/ l.params({"type":/*#__PURE__*/ l.optional(/*#__PURE__*/ l.string({"format":"nsid"})),"did":/*#__PURE__*/ l.optional(/*#__PURE__*/ l.string({"format":"did"})),"limit":/*#__PURE__*/ l.optional(/*#__PURE__*/ l.withDefault(/*#__PURE__*/ l.integer({"minimum":1,"maximum":100}), 50)),"cursor":/*#__PURE__*/ l.optional(/*#__PURE__*/ l.string())});
+export const $params = /*#__PURE__*/ l.params({"spaceType":/*#__PURE__*/ l.optional(/*#__PURE__*/ l.string({"format":"nsid"})),"did":/*#__PURE__*/ l.optional(/*#__PURE__*/ l.string({"format":"did"})),"limit":/*#__PURE__*/ l.optional(/*#__PURE__*/ l.withDefault(/*#__PURE__*/ l.integer({"minimum":1,"maximum":100}), 50)),"cursor":/*#__PURE__*/ l.optional(/*#__PURE__*/ l.string())});
 
 export type $Params = l.InferOutput<typeof $params>;
 
@@ -19,7 +19,7 @@ export const $output = /*#__PURE__*/ l.jsonPayload({"cursor":/*#__PURE__*/ l.opt
 export type $Output<B = l.BinaryData> = l.InferPayload<typeof $output, B>;
 export type $OutputBody<B = l.BinaryData> = l.InferPayloadBody<typeof $output, B>;
 
-/** List the spaces the authenticated user holds a repo in (i.e. spaces the user has written data to), optionally filtered by type and/or authority DID. Note this is not 'spaces I'm a member of' — a member's PDS only tracks spaces its user has written to. Requires auth, implemented by PDS. */
+/** List the spaces the authenticated user holds a repo in (i.e. spaces the user has written data to) or is the authority of, optionally filtered by type and/or authority DID. Note this is not 'spaces I'm a member of' — a member's PDS only tracks spaces its user has written to. Requires auth, implemented by PDS. */
 const main = /*#__PURE__*/ l.query($nsid, $params, $output);
 
 export { main };

@@ -7,7 +7,7 @@ import { boundedJson, FETCH_TIMEOUT } from './network.ts'
  * a wording this does not recognise, reads as unsupported.
  */
 export async function spacesSupported(service: string): Promise<boolean> {
-  const res = await fetch(new URL('/xrpc/com.atproto.simplespace.getSpace', service), { signal: AbortSignal.timeout(FETCH_TIMEOUT), redirect: 'error' })
+  const res = await fetch(new URL('/xrpc/com.atproto.space.getSpace', service), { signal: AbortSignal.timeout(FETCH_TIMEOUT), redirect: 'error' })
   if (res.status !== 400)
     return false
   const body = await boundedJson<{ message?: unknown } | null>(res).catch(() => null)

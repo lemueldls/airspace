@@ -53,6 +53,7 @@ describe('defineSpace', () => {
       session: account.session,
     })
     expectTypeOf(airspace.projects).toEqualTypeOf<typeof airspace.collections.projects>()
+    await airspace.workspace.manage.ensure()
     const cat = await airspace.categories.create({ name: 'Derived category', createdAt: now() })
     const draft = await airspace.workspace.projects.create({ name: 'Derived', category: { uri: cat.uri, cid: cat.cid }, createdAt: now() })
     await airspace.workspace.projects.publish(draft.rkey)
@@ -116,7 +117,7 @@ describe('space client', () => {
     expect(airspace.workspace.projects).toBe(airspace.workspace.collections.projects)
   })
 
-  it('manages the space through simplespace', async () => {
+  it('manages the space through com.atproto.space', async () => {
     const { airspace } = await setup()
     expect(await airspace.workspace.manage.info()).toBeNull()
 
@@ -132,20 +133,52 @@ describe('space client', () => {
     expect(await airspace.workspace.manage.members.list()).toEqual([])
 
     await airspace.workspace.manage.update({ read: 'public' })
-    expect(await airspace.workspace.manage.info()).toEqual({ uri: await airspace.workspace.uri(), read: 'public', write: 'member-list', appAccess: 'open' })
+    expect(await airspace.workspace.manage.info()).toEqual({
+      uri: await airspace.workspace.uri(),
+      read: 'public',
+      write: 'member-list',
+      appAccess: 'open',
+      policy: {
+        type: 'memberspace',
+        publicRead: true,
+        publicWrite: false,
+        allowedApps: undefined,
+        publishPolicy: false,
+        publishMembers: false,
+      },
+    })
 
     await airspace.workspace.manage.delete()
     expect(await airspace.workspace.manage.info()).toBeNull()
   })
 
-  it('reports a space written to but never configured as existing', async () => {
+  it('publishes the policy and member list when asked', async () => {
+    const { airspace, account } = await setup()
+    await airspace.workspace.manage.ensure({
+      policy: { type: 'memberspace', publishPolicy: true, publishMembers: true },
+    })
+    await airspace.workspace.manage.members.add('did:plc:bbbbbbbbbbbbbbbbbbbbbbbb')
+
+    const uri = await airspace.workspace.uri()
+    const policy = await account.raw.call(com.atproto.space.listRecords, {
+      space: uri,
+      repo: account.did,
+      collection: 'com.atproto.space.policy',
+    })
+    expect(policy.records).toHaveLength(1)
+    const members = await account.raw.call(com.atproto.space.listRecords, {
+      space: uri,
+      repo: account.did,
+      collection: 'com.atproto.memberspace.member',
+    })
+    expect(members.records.map(record => record.rkey)).toEqual([
+      'did:plc:bbbbbbbbbbbbbbbbbbbbbbbb',
+    ])
+  })
+
+  it('reports a configured space as existing', async () => {
     const { airspace } = await setup()
     expect(await airspace.workspace.manage.exists()).toBe(false)
-
-    const cat = await airspace.categories.create({ name: 'Category', createdAt: now() })
-    await airspace.workspace.projects.create({ name: 'Draft', category: { uri: cat.uri, cid: cat.cid }, createdAt: now() })
-    expect(await airspace.workspace.manage.exists()).toBe(true)
-    expect(await airspace.workspace.manage.info()).toBeNull()
 
     await airspace.workspace.manage.ensure()
     expect(await airspace.workspace.manage.exists()).toBe(true)
@@ -449,14 +482,14 @@ describe('space support', () => {
     const calls = countCalls()
     expect(await airspace.workspace.supported()).toBe(true)
     expect(await airspace.workspace.supported()).toBe(true)
-    expect(calls.filter(call => call === 'com.atproto.simplespace.getSpace')).toHaveLength(1)
+    expect(calls.filter(call => call === 'com.atproto.space.getSpace')).toHaveLength(1)
   })
 
   it.each([
     ['a credential refusal', 401, { error: 'AuthMissing', message: 'Authentication Required' }],
     ['an unimplemented method', 501, { error: 'MethodNotImplemented', message: 'Method Not Implemented' }],
     ['a failed proxy', 502, { error: 'UpstreamFailure', message: 'Upstream service unreachable' }],
-    ['an unroutable method', 400, { error: 'InvalidRequest', message: 'No service configured for com.atproto.simplespace.getSpace' }],
+    ['an unroutable method', 400, { error: 'InvalidRequest', message: 'No service configured for com.atproto.space.getSpace' }],
     ['a bodiless refusal', 400, null],
   ])('does not read %s as an answer from the space domain', async (_label, status, body) => {
     vi.stubGlobal('fetch', () => Promise.resolve(new Response(body && JSON.stringify(body), { status })))
@@ -482,7 +515,7 @@ describe('space support', () => {
 
   it('reports a PDS that refuses the method as missing auth rather than passing on the refusal', async () => {
     const { airspace } = await setup()
-    stubXrpcError('com.atproto.simplespace.getSpace', 401, { error: 'AuthMissing', message: 'Authentication Required' })
+    stubXrpcError('com.atproto.space.getSpace', 401, { error: 'AuthMissing', message: 'Authentication Required' })
     await expect(airspace.workspace.manage.info()).rejects.toThrow(SpacesUnsupportedError)
   })
 
@@ -490,7 +523,7 @@ describe('space support', () => {
     const { airspace } = await setup()
     const real = fetch
     vi.stubGlobal('fetch', ((input, init) => {
-      if (/\/xrpc\/com\.atproto\.(?:simple)?space\./.test(new URL(typeof input === 'string' ? input : input instanceof URL ? input.href : input.url).pathname))
+      if (/\/xrpc\/com\.atproto\.(?:simplespace|memberspace|managedspace|personalspace|space)\./.test(new URL(typeof input === 'string' ? input : input instanceof URL ? input.href : input.url).pathname))
         return Promise.resolve(Response.json({ error: 'InvalidToken', message: 'Missing required scope "space:dev.example.workspace?skey=self"' }, { status: 403 }))
       return real(input, init)
     }) as typeof fetch)
@@ -505,12 +538,12 @@ describe('space support', () => {
     const { airspace } = await setup()
     const real = fetch
     vi.stubGlobal('fetch', ((input, init) => {
-      if (/\/xrpc\/com\.atproto\.simplespace\./.test(new URL(typeof input === 'string' ? input : input instanceof URL ? input.href : input.url).pathname))
+      if (/\/xrpc\/com\.atproto\.(?:simplespace|memberspace|managedspace|personalspace|space)\./.test(new URL(typeof input === 'string' ? input : input instanceof URL ? input.href : input.url).pathname))
         return Promise.resolve(Response.json({ error: 'InvalidToken', message: 'Missing required scope "space:dev.example.workspace?skey=self&manage=create"' }, { status: 403 }))
       return real(input, init)
     }) as typeof fetch)
 
-    for (const call of [() => airspace.workspace.manage.info(), () => airspace.workspace.manage.ensure(), () => airspace.workspace.manage.members.add('did:plc:bob')]) {
+    for (const call of [() => airspace.workspace.manage.info(), () => airspace.workspace.manage.ensure(), () => airspace.workspace.manage.members.add('did:plc:bbbbbbbbbbbbbbbbbbbbbbbb')]) {
       const error = await call().catch((e: unknown) => e)
       expect(error).toBeInstanceOf(ScopeError)
       expect((error as ScopeError).missingScope).toBe('space:dev.example.workspace?skey=self&manage=create')

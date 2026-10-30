@@ -24,7 +24,7 @@ export const $output = /*#__PURE__*/ l.payload();
 export type $Output<B = l.BinaryData> = l.InferPayload<typeof $output, B>;
 export type $OutputBody<B = l.BinaryData> = l.InferPayloadBody<typeof $output, B>;
 
-/** Notify a syncing service that a space has been deleted, and that it should drop every copy of the space's data it holds. Sent by the space authority to the services registered for the space, best-effort. Authenticated with service auth addressed to the receiving service. */
+/** Notify a syncing service that a space was deleted and its copy should be dropped. Sent by the space authority to registered services, retried until delivered or the registration expires. Requires service auth. */
 const main = /*#__PURE__*/ l.procedure($nsid, $params, $input, $output);
 
 export { main };

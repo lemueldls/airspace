@@ -10,17 +10,17 @@ type $nsid = typeof $nsid;
 
 export { $nsid };
 
-export const $params = /*#__PURE__*/ l.params({"space":/*#__PURE__*/ l.string({"format":"uri"}),"repo":/*#__PURE__*/ l.string({"format":"did"}),"excludeValues":/*#__PURE__*/ l.optional(/*#__PURE__*/ l.withDefault(/*#__PURE__*/ l.boolean(), false))});
+export const $params = /*#__PURE__*/ l.params({"space":/*#__PURE__*/ l.string({"format":"uri"}),"repo":/*#__PURE__*/ l.string({"format":"did"})});
 
 export type $Params = l.InferOutput<typeof $params>;
 
-export const $output = /*#__PURE__*/ l.payload("application/vnd.ipld.car");
+export const $output = /*#__PURE__*/ l.payload("application/octet-stream");
 
 export type $Output<B = l.BinaryData> = l.InferPayload<typeof $output, B>;
 export type $OutputBody<B = l.BinaryData> = l.InferPayloadBody<typeof $output, B>;
 
-/** Download an account's permissioned repo within a space as a CAR file, for full-state recovery. The CAR declares two roots in order: the signed commit, then a DRISL (DAG-CBOR) index mapping '{collection}/{rkey}' to record CID. Record blocks follow, in the same canonical DAG-CBOR key order as the index (length-first, then bytewise). Blobs are not included and are fetched separately via getBlob. Served by a repo host. Callable with either OAuth (for the authenticated user's own data) or a space credential (for syncing services). */
-const main = /*#__PURE__*/ l.query($nsid, $params, $output, ["SpaceNotFound","RepoNotFound","RepoTakendown","RepoSuspended","RepoDeactivated"]);
+/** Download an account's permissioned repo within a space as a STAR file, for full-state recovery. The archive's metadata is the repo's commit; each key/value pair is a record path ('{collection}/{rkey}') and the record's DRISL encoding, in strict lexicographic order of the path. Blobs are not included and are fetched separately via getBlob. Served by a repo host. Callable with either OAuth (for the authenticated user's own data) or a space credential (for syncing services). When called with a space credential, the caller must send an Atproto-Space-Want-Mac header, and the commit's MAC is returned in the Atproto-Space-Mac response header. */
+const main = /*#__PURE__*/ l.query($nsid, $params, $output, ["BadSpaceMac","SpaceNotFound","RepoNotFound","RepoTakendown","RepoSuspended","RepoDeactivated"]);
 
 export { main };
 

@@ -3,22 +3,33 @@
  */
 
 export * as applyWrites from "./space/applyWrites.ts";
+export * as clearRecords from "./space/clearRecords.ts";
 export * as createRecord from "./space/createRecord.ts";
+export * as createSpace from "./space/createSpace.ts";
 export * as defs from "./space/defs.ts";
 export * as deleteRecord from "./space/deleteRecord.ts";
+export * as deleteSpace from "./space/deleteSpace.ts";
+export * as exportSpaceMeta from "./space/exportSpaceMeta.ts";
 export * as getBlob from "./space/getBlob.ts";
 export * as getDelegationToken from "./space/getDelegationToken.ts";
 export * as getLatestCommit from "./space/getLatestCommit.ts";
 export * as getRecord from "./space/getRecord.ts";
 export * as getRepo from "./space/getRepo.ts";
+export * as getSpace from "./space/getSpace.ts";
 export * as getSpaceCredential from "./space/getSpaceCredential.ts";
+export * as importRepo from "./space/importRepo.ts";
+export * as importSpaceMeta from "./space/importSpaceMeta.ts";
 export * as listBlobs from "./space/listBlobs.ts";
 export * as listRecords from "./space/listRecords.ts";
 export * as listRepoOps from "./space/listRepoOps.ts";
 export * as listRepos from "./space/listRepos.ts";
 export * as listSpaces from "./space/listSpaces.ts";
+export * as notifyCredentialRevoked from "./space/notifyCredentialRevoked.ts";
 export * as notifySpaceDeleted from "./space/notifySpaceDeleted.ts";
 export * as notifyWrite from "./space/notifyWrite.ts";
+export * as policy from "./space/policy.ts";
 export * as putRecord from "./space/putRecord.ts";
 export * as registerNotify from "./space/registerNotify.ts";
+export * as removeWriter from "./space/removeWriter.ts";
 export * as unregisterNotify from "./space/unregisterNotify.ts";
+export * as updateSpace from "./space/updateSpace.ts";

@@ -116,17 +116,33 @@ export function createSpaceBackend({ space, repo, service, client }: SpaceBacken
 export type SpacePolicy = 'public' | 'member-list' | { managingApp: string }
 export type SpaceAppAccess = 'open' | { allowed: readonly string[] }
 
+export type SpacePolicyDetail
+  = | { type: 'personalspace' }
+    | {
+      type: 'memberspace'
+      publicRead?: boolean
+      publicWrite?: boolean
+      allowedApps?: readonly string[]
+      publishPolicy?: boolean
+      publishMembers?: boolean
+    }
+    | { type: 'managedspace', managingApp: string, publishPolicy?: boolean }
+
 export interface SpaceInfo {
   uri: string
   read: SpacePolicy
   write: SpacePolicy
   appAccess: SpaceAppAccess
+  policy: SpacePolicyDetail
 }
 
 export interface EnsureSpaceOptions {
   read?: SpacePolicy
   write?: SpacePolicy
   appAccess?: SpaceAppAccess
+  policy?: SpacePolicyDetail
+  publishPolicy?: boolean
+  publishMembers?: boolean
 }
 
 /** A member of a space, and which halves of the member-list policy they satisfy. */
@@ -138,59 +154,123 @@ export interface SpaceMember {
 
 export type SpaceMemberAccess = Partial<Omit<SpaceMember, 'did'>>
 
-function policyToLex(policy: SpacePolicy) {
-  return policy === 'public'
-    ? com.atproto.simplespace.defs.publicPolicy.build({})
-    : policy === 'member-list'
-      ? com.atproto.simplespace.defs.memberListPolicy.build({})
-      : com.atproto.simplespace.defs.managingAppPolicy.build({ managingApp: policy.managingApp })
+function policyToLex(policy: SpacePolicyDetail) {
+  if (policy.type === 'personalspace')
+    return com.atproto.personalspace.policy.$build({})
+  if (policy.type === 'managedspace') {
+    return com.atproto.managedspace.policy.$build({
+      managingApp: policy.managingApp,
+      publishPolicy: policy.publishPolicy ?? false,
+    })
+  }
+  return com.atproto.memberspace.policy.$build({
+    publicRead: policy.publicRead ?? false,
+    publicWrite: policy.publicWrite ?? false,
+    allowedApps: policy.allowedApps ? [...policy.allowedApps] : undefined,
+    publishPolicy: policy.publishPolicy ?? false,
+    publishMembers: policy.publishMembers ?? false,
+  })
 }
 
-function appAccessToLex(access: SpaceAppAccess) {
-  return access === 'open'
-    ? com.atproto.simplespace.defs.open.build({})
-    : com.atproto.simplespace.defs.allowList.build({ allowed: [...access.allowed] })
+function policyFromLex(value: { $type?: string, [key: string]: unknown }): SpacePolicyDetail {
+  if (value.$type === 'com.atproto.personalspace.policy')
+    return { type: 'personalspace' }
+  if (value.$type === 'com.atproto.managedspace.policy') {
+    return {
+      type: 'managedspace',
+      managingApp: String(value.managingApp ?? ''),
+      publishPolicy: Boolean(value.publishPolicy),
+    }
+  }
+  return {
+    type: 'memberspace',
+    publicRead: Boolean(value.publicRead),
+    publicWrite: Boolean(value.publicWrite),
+    allowedApps: Array.isArray(value.allowedApps) ? value.allowedApps.map(String) : undefined,
+    publishPolicy: Boolean(value.publishPolicy),
+    publishMembers: Boolean(value.publishMembers),
+  }
 }
 
-function policyFromLex(value: { $type?: string, managingApp?: string }): SpacePolicy {
-  if (com.atproto.simplespace.defs.publicPolicy.isTypeOf(value))
-    return 'public'
-  if (com.atproto.simplespace.defs.managingAppPolicy.isTypeOf(value))
-    return { managingApp: value.managingApp! }
-  return 'member-list'
+function policyInfo(uri: string, policy: SpacePolicyDetail): SpaceInfo {
+  if (policy.type === 'personalspace') {
+    return {
+      uri,
+      read: 'member-list',
+      write: 'member-list',
+      appAccess: 'open',
+      policy,
+    }
+  }
+  if (policy.type === 'managedspace') {
+    return {
+      uri,
+      read: { managingApp: policy.managingApp },
+      write: { managingApp: policy.managingApp },
+      appAccess: 'open',
+      policy,
+    }
+  }
+  return {
+    uri,
+    read: policy.publicRead ? 'public' : 'member-list',
+    write: policy.publicWrite ? 'public' : 'member-list',
+    appAccess: policy.allowedApps?.length ? { allowed: policy.allowedApps } : 'open',
+    policy,
+  }
 }
 
-function appAccessFromLex(value: { $type?: string, allowed?: string[] }): SpaceAppAccess {
-  if (com.atproto.simplespace.defs.allowList.isTypeOf(value))
-    return { allowed: value.allowed! }
-  return 'open'
+function policyForOptions(options: EnsureSpaceOptions, current?: SpacePolicyDetail): SpacePolicyDetail {
+  if (options.policy)
+    return options.policy
+
+  const read = options.read ?? (current?.type === 'memberspace' && current.publicRead ? 'public' : current?.type === 'managedspace' ? { managingApp: current.managingApp } : 'member-list')
+  const write = options.write ?? (current?.type === 'memberspace' && current.publicWrite ? 'public' : current?.type === 'managedspace' ? { managingApp: current.managingApp } : 'member-list')
+  const managed = typeof read === 'object' ? read.managingApp : typeof write === 'object' ? write.managingApp : undefined
+  if (managed) {
+    return {
+      type: 'managedspace',
+      managingApp: managed,
+      publishPolicy: options.publishPolicy ?? (current?.type === 'managedspace' ? current.publishPolicy : false),
+    }
+  }
+
+  return {
+    type: 'memberspace',
+    publicRead: read === 'public',
+    publicWrite: write === 'public',
+    allowedApps: options.appAccess && options.appAccess !== 'open' ? [...options.appAccess.allowed] : current?.type === 'memberspace' ? current.allowedApps : undefined,
+    publishPolicy: options.publishPolicy ?? (current?.type === 'memberspace' ? current.publishPolicy : false),
+    publishMembers: options.publishMembers ?? (current?.type === 'memberspace' ? current.publishMembers : false),
+  }
 }
 
 export interface SpaceManager {
   /**
-   * Whether the space holds any of this repo's data, from
-   * `com.atproto.space.listSpaces`. True for a space you have only ever
-   * written to, which has no managed configuration and so no `info()`.
+   * Whether the authority holds a space with this type and key, from
+   * `com.atproto.space.listSpaces`. A space can exist before its policy is
+   * configured, in which case `info()` stays `null`.
    */
   exists: () => Promise<boolean>
   /**
-   * The space's managed configuration, or `null` when nothing has configured
-   * it. Writing to your own space creates the space but not its configuration,
-   * so `info()` stays `null` until `ensure()` runs; use `exists()` to ask
-   * whether the space is there at all.
+   * The space's policy, or `null` when nothing has configured it. A space
+   * written to without `ensure()` has no managed policy, so `info()` stays
+   * `null`; use `exists()` to ask whether the space is there at all.
    */
   info: () => Promise<SpaceInfo | null>
   ensure: (options?: EnsureSpaceOptions) => Promise<SpaceInfo>
-  update: (options: EnsureSpaceOptions) => Promise<void>
+  update: (options: EnsureSpaceOptions) => Promise<SpaceInfo>
   delete: () => Promise<void>
   members: {
     list: () => Promise<SpaceMember[]>
     add: (did: DidString, access?: SpaceMemberAccess) => Promise<void>
     remove: (did: DidString) => Promise<void>
   }
+  removeWriter: (did: DidString) => Promise<void>
+  clearRecords: () => Promise<void>
 }
 
-/** `com.atproto.simplespace` management for a space anchored on the session's DID. */
+/** `com.atproto.space` management for a space anchored on the session's DID. */
 export function createSpaceManager(space: Space, authority: DidString, client: Client | undefined): SpaceManager {
   const uri = spaceUri(authority, space.type, space.skey)
   const require = (): Client => {
@@ -201,8 +281,8 @@ export function createSpaceManager(space: Space, authority: DidString, client: C
 
   async function info(): Promise<SpaceInfo | null> {
     try {
-      const res = await require().call(com.atproto.simplespace.getSpace, { space: uri })
-      return { uri: res.uri, read: policyFromLex(res.readPolicy), write: policyFromLex(res.writePolicy), appAccess: appAccessFromLex(res.appAccess) }
+      const res = await require().call(com.atproto.space.getSpace, { space: uri })
+      return policyInfo(uri, policyFromLex(res.policy))
     }
     catch (err) {
       if (err instanceof XrpcResponseError && err.error === 'SpaceNotFound')
@@ -214,7 +294,7 @@ export function createSpaceManager(space: Space, authority: DidString, client: C
   async function exists(): Promise<boolean> {
     let cursor: string | undefined
     do {
-      const res = await require().call(com.atproto.space.listSpaces, { type: space.type, did: authority, limit: PAGE, cursor })
+      const res = await require().call(com.atproto.space.listSpaces, { spaceType: space.type, did: authority, limit: PAGE, cursor })
       if (res.spaces.some(view => view.uri === uri))
         return true
       cursor = res.cursor
@@ -229,46 +309,48 @@ export function createSpaceManager(space: Space, authority: DidString, client: C
       const existing = await info()
       if (existing)
         return existing
-      const read = options.read ?? 'member-list'
-      const write = options.write ?? 'member-list'
-      const appAccess = options.appAccess ?? 'open'
-      const res = await require().call(com.atproto.simplespace.createSpace, {
-        type: space.type,
+      const policy = policyForOptions(options)
+      const res = await require().call(com.atproto.space.createSpace, {
+        spaceType: space.type,
         skey: space.skey,
-        readPolicy: policyToLex(read),
-        writePolicy: policyToLex(write),
-        appAccess: appAccessToLex(appAccess),
+        policy: policyToLex(policy),
       })
-      return { uri: res.uri, read, write, appAccess }
+      return policyInfo(res.uri, policy)
     },
     async update(options) {
-      await require().call(com.atproto.simplespace.updateSpace, {
-        space: uri,
-        readPolicy: options.read ? policyToLex(options.read) : undefined,
-        writePolicy: options.write ? policyToLex(options.write) : undefined,
-        appAccess: options.appAccess ? appAccessToLex(options.appAccess) : undefined,
-      })
+      const existing = await info()
+      if (!existing)
+        throw new Error(`space not found: ${uri}`)
+      const policy = policyForOptions(options, existing.policy)
+      await require().call(com.atproto.space.updateSpace, { space: uri, policy: policyToLex(policy) })
+      return policyInfo(uri, policy)
     },
     async delete() {
-      await require().call(com.atproto.simplespace.deleteSpace, { space: uri })
+      await require().call(com.atproto.space.deleteSpace, { space: uri })
     },
     members: {
       async list() {
         const out: SpaceMember[] = []
         let cursor: string | undefined
         do {
-          const res = await require().call(com.atproto.simplespace.listMembers, { space: uri, limit: PAGE, cursor })
+          const res = await require().call(com.atproto.memberspace.listMembers, { space: uri, limit: PAGE, cursor })
           out.push(...res.members.map(m => ({ did: m.did, read: m.read, write: m.write })))
           cursor = res.cursor
         } while (cursor)
         return out
       },
       async add(did, access = {}) {
-        await require().call(com.atproto.simplespace.putMember, { space: uri, did, read: access.read ?? true, write: access.write ?? true })
+        await require().call(com.atproto.memberspace.putMember, { space: uri, did, read: access.read ?? true, write: access.write ?? true })
       },
       async remove(did) {
-        await require().call(com.atproto.simplespace.removeMember, { space: uri, did })
+        await require().call(com.atproto.memberspace.removeMember, { space: uri, did })
       },
+    },
+    async removeWriter(did) {
+      await require().call(com.atproto.space.removeWriter, { space: uri, did })
+    },
+    async clearRecords() {
+      await require().call(com.atproto.space.clearRecords, { space: uri, repo: authority })
     },
   }
 }
