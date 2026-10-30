@@ -75,7 +75,8 @@
   },
   "files": [
     "bin",
-    "dist"
+    "dist",
+    "src"
   ],
   "engines": {
     "node": ">=22.0.0"
