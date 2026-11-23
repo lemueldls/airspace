@@ -72,5 +72,39 @@ Call `ensure()` before writing. The current alpha creates the space and its repo
 
 Over OAuth each operation is a separate grant, asked for with `manage` in [`scopesFor`](/docs/oauth): `update()`, `members.add()`, `members.remove()`, and `removeWriter()` need `update`, and `delete()` needs `delete`.
 
+## reading a shared space
+
+`space.reader()` reads every repo in a space with a space credential. Define the space with the owner's DID as its authority:
+
+```ts
+import { defineSpace } from 'airspace'
+
+const shared = defineSpace(declaration, {
+  authority: ownerDid,
+  skey: 'team',
+  collections: { projects },
+})
+
+const airspace = createAirspace({ identity, spaces: { shared }, session })
+const reader = await airspace.shared.reader()
+
+for await (const writer of reader.writers()) {
+  const { records } = await reader.listRecords({
+    repo: writer.repo,
+    collection: 'dev.example.project',
+  })
+}
+```
+
+The reader mints and renews the credential from the signed-in account's delegation token. Without a session it can still read public spaces. `getRecord()` verifies the record against its MAC. `getLatestCommit()`, `listRepoOps()`, and `getRepo()` are there for sync, and `listBlobs()`/`getBlob()` for assets. Writes stay on the signed-in account's own repo and use the collection clients.
+
+The alpha PDS makes `getSpace` and `listMembers` authority-only, so `manage.info()` and `manage.members.list()` do not work for a space you only belong to. Set `publishPolicy` and `publishMembers`, then read `com.atproto.space.policy` and `com.atproto.memberspace.member` records through the reader.
+
+For a local PDS, pass a `didResolver` that resolves its PLC:
+
+```ts
+const reader = await airspace.shared.reader({ didResolver })
+```
+
 > [!WARNING]
 > Blobs uploaded into a space are currently readable through the public `sync.getBlob` endpoint ([atproto#5435](https://github.com/bluesky-social/atproto/issues/5435)). Don't put images in a space that you'd mind being seen.
