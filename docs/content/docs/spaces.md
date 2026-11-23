@@ -55,7 +55,7 @@ await airspace.workspace.manage.exists() // is the space there at all?
 await airspace.workspace.manage.info() // `null` until `ensure()`
 ```
 
-The `read`, `write`, and `appAccess` options map onto the current policy:
+The `read`, `write`, and `appAccess` options map onto the policy:
 
 ```ts
 await airspace.workspace.manage.ensure({
@@ -66,7 +66,7 @@ await airspace.workspace.manage.ensure({
 })
 ```
 
-`type: 'memberspace'` is the shared-space policy. Set `publicRead` or `publicWrite` to open that side to anyone. `publishPolicy` and `publishMembers` write the policy and member list into the authority's space repo so readers and syncers can discover them. The other normalized types are `personalspace` (only the authority) and `managedspace` (each access decision goes to a managing app). Their wire types are `com.atproto.personalspace.policy` and `com.atproto.managedspace.policy`.
+`type: 'memberspace'` is the shared-space policy. Set `publicRead` or `publicWrite` to open that side to anyone. `publishPolicy` and `publishMembers` write the policy and member list into the authority's space repo so readers and syncers can discover them. `personalspace` keeps the space to the authority, and `managedspace` asks a managing app for each access decision.
 
 Call `ensure()` before writing. The current alpha creates the space and its repo together, so a write does not create an unconfigured space as a side effect.
 
