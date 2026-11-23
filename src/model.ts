@@ -142,7 +142,7 @@ export interface SpaceDeclaration<N extends NsidString = NsidString, K extends s
   readonly key: K
   /** Defaults to the NSIDs of the collections passed to `defineSpace`. */
   readonly collections?: readonly string[]
-  readonly name?: string
+  readonly title?: string
   readonly description?: string
 }
 

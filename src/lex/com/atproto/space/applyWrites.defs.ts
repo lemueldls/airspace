@@ -24,7 +24,7 @@ export const $output = /*#__PURE__*/ l.jsonPayload({"results":/*#__PURE__*/ l.op
 export type $Output<B = l.BinaryData> = l.InferPayload<typeof $output, B>;
 export type $OutputBody<B = l.BinaryData> = l.InferPayloadBody<typeof $output, B>;
 
-/** Apply a batch transaction of creates, updates, and deletes in a permissioned space. Requires auth, implemented by PDS. */
+/** Apply a batch transaction of creates, updates, and deletes to a space repo. Requires auth, implemented by PDS. */
 const main = /*#__PURE__*/ l.procedure($nsid, $params, $input, $output, ["SpaceNotFound","RecordNotFound","RecordAlreadyExists"]);
 
 export { main };
@@ -41,7 +41,7 @@ type Create = { $type?: "com.atproto.space.applyWrites#create";"collection":l.Ns
 export type { Create };
 
 /** Operation which creates a new record. */
-const create = /*#__PURE__*/ l.typedObject<Create>($nsid, "create", /*#__PURE__*/ l.object({"collection":/*#__PURE__*/ l.string({"format":"nsid"}),"rkey":/*#__PURE__*/ l.optional(/*#__PURE__*/ l.string({"format":"record-key","maxLength":512})),"value":/*#__PURE__*/ l.lexMap()}));
+const create = /*#__PURE__*/ l.typedObject<Create>($nsid, "create", /*#__PURE__*/ l.object({"collection":/*#__PURE__*/ l.string({"format":"nsid"}),"rkey":/*#__PURE__*/ l.optional(/*#__PURE__*/ l.string({"format":"record-key"})),"value":/*#__PURE__*/ l.lexMap()}));
 
 export { create };
 

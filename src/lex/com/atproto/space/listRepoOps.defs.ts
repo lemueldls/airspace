@@ -15,13 +15,13 @@ export const $params = /*#__PURE__*/ l.params({"space":/*#__PURE__*/ l.string({"
 
 export type $Params = l.InferOutput<typeof $params>;
 
-export const $output = /*#__PURE__*/ l.jsonPayload({"ops":/*#__PURE__*/ l.array(/*#__PURE__*/ l.ref<OpEntry>((() => opEntry) as any), ),"commit":/*#__PURE__*/ l.optional(/*#__PURE__*/ l.ref<SpaceDefs.SignedCommit>((() => SpaceDefs.signedCommit) as any)),"cursor":/*#__PURE__*/ l.optional(/*#__PURE__*/ l.string())});
+export const $output = /*#__PURE__*/ l.jsonPayload({"ops":/*#__PURE__*/ l.array(/*#__PURE__*/ l.ref<OpEntry>((() => opEntry) as any), ),"commit":/*#__PURE__*/ l.ref<SpaceDefs.Commit>((() => SpaceDefs.commit) as any),"cursor":/*#__PURE__*/ l.optional(/*#__PURE__*/ l.string())});
 
 export type $Output<B = l.BinaryData> = l.InferPayload<typeof $output, B>;
 export type $OutputBody<B = l.BinaryData> = l.InferPayloadBody<typeof $output, B>;
 
-/** List the operation log for an account's permissioned repo within a space, returning operations after a given revision. Primary incremental sync mechanism. By default each created or updated operation inlines the record's current value; set excludeValues for metadata-only entries. Note the oplog is a transport optimization with no history guarantee: a host may compact it or drop it, and it does not survive account migration, so omitting `since` returns the retained window rather than the repo's full history. Use getRepo for an initial sync or when a `since` revision is no longer available. Callable with either OAuth (for the authenticated user's own data) or a space credential (for syncing services). */
-const main = /*#__PURE__*/ l.query($nsid, $params, $output, ["SpaceNotFound","RepoNotFound","RepoTakendown","RepoSuspended","RepoDeactivated"]);
+/** List operations on a space repo after a given revision. Used for incremental sync. Hosts may truncate the log, so use getRepo for a full sync. Responses are authenticated with a MAC. Requires auth as the repo's account or with a space credential; implemented by PDS. */
+const main = /*#__PURE__*/ l.query($nsid, $params, $output, ["InvalidSpaceMac","SpaceNotFound","RepoNotFound","RepoTakendown","RepoSuspended","RepoDeactivated","InvalidCursor"]);
 
 export { main };
 
@@ -31,17 +31,27 @@ type $lxm = typeof $lxm;
 
 export { $lxm };
 
-/** A single operation in a permissioned repo's oplog. cid is null for deletes; prev is null for creates. Operations sharing the same rev belong to the same batch. value carries the record's current value for creates and updates, unless excludeValues was set or the value is stale (superseded by a later operation). */
-type OpEntry = { $type?: "com.atproto.space.listRepoOps#opEntry";"rev":l.TidString;"collection":l.NsidString;"rkey":l.RecordKeyString;"cid":l.CidString | null;"prev":l.CidString | null;
+/** Operations that share a rev were applied in the same commit. */
+type OpEntry = { $type?: "com.atproto.space.listRepoOps#opEntry";"rev":l.TidString;"collection":l.NsidString;"rkey":l.RecordKeyString;
 
   /**
-   * The record's current value, inlined for create and update operations. Omitted when excludeValues is set, for deletes, or when the value has been superseded by a later operation.
+   * CID of the record after the operation. Null for deletes.
+   */
+  "cid":l.CidString | null;
+
+  /**
+   * CID of the record before the operation. Null for creates.
+   */
+  "prev":l.CidString | null;
+
+  /**
+   * Omitted for deletes, if excludeValues is set, or if the record has since changed.
    */
   "value"?:l.LexMap };
 
 export type { OpEntry };
 
-/** A single operation in a permissioned repo's oplog. cid is null for deletes; prev is null for creates. Operations sharing the same rev belong to the same batch. value carries the record's current value for creates and updates, unless excludeValues was set or the value is stale (superseded by a later operation). */
+/** Operations that share a rev were applied in the same commit. */
 const opEntry = /*#__PURE__*/ l.typedObject<OpEntry>($nsid, "opEntry", /*#__PURE__*/ l.object({"rev":/*#__PURE__*/ l.string({"format":"tid"}),"collection":/*#__PURE__*/ l.string({"format":"nsid"}),"rkey":/*#__PURE__*/ l.string({"format":"record-key"}),"cid":/*#__PURE__*/ l.nullable(/*#__PURE__*/ l.string({"format":"cid"})),"prev":/*#__PURE__*/ l.nullable(/*#__PURE__*/ l.string({"format":"cid"})),"value":/*#__PURE__*/ l.optional(/*#__PURE__*/ l.lexMap())}));
 
 export { opEntry };

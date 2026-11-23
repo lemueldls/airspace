@@ -10,42 +10,62 @@ type $nsid = typeof $nsid;
 
 export { $nsid };
 
-/** A signed commit over the current state of a permissioned repo. */
-type SignedCommit = { $type?: "com.atproto.space.defs#signedCommit";
+/** Commit to the current state of a space repo. Not signed; authenticated by the repo host with a MAC instead. */
+type Commit = { $type?: "com.atproto.space.defs#commit";
 
   /**
-   * Commit format version, currently 1. Corresponds to the version in the ctx protocol tag (atproto-space-v1).
+   * Commit format version, currently 1.
    */
-  "ver":number;
+  "ver":number;"repo":l.DidString;"space":l.UriString;"rev":l.TidString;
 
   /**
-   * sha256 digest of the LtHash state (32 bytes).
+   * SHA-256 digest of the repo's LtHash state.
    */
-  "hash":Uint8Array;
+  "data":Uint8Array };
+
+export type { Commit };
+
+/** Commit to the current state of a space repo. Not signed; authenticated by the repo host with a MAC instead. */
+const commit = /*#__PURE__*/ l.typedObject<Commit>($nsid, "commit", /*#__PURE__*/ l.object({"ver":/*#__PURE__*/ l.integer(),"repo":/*#__PURE__*/ l.string({"format":"did"}),"space":/*#__PURE__*/ l.string({"format":"uri"}),"rev":/*#__PURE__*/ l.string({"format":"tid"}),"data":/*#__PURE__*/ l.bytes()}));
+
+export { commit };
+
+/** A repo in the space advanced to a new revision. */
+type RepoWrite = { $type?: "com.atproto.space.defs#repoWrite";"repo":l.DidString;"repoRev":l.TidString;"data":Uint8Array;
 
   /**
-   * Per-signature input keying material (32 random bytes)
+   * The space revision at which this update was sequenced.
    */
-  "ikm":Uint8Array;
+  "spaceRev":l.TidString;
 
   /**
-   * Signature over ctx (space, author DID, rev, ikm) by the user's atproto signing key. Does not cover the repo hash.
+   * The space revision before this update, if any. Set in notifySpaceUpdate, where a gap indicates missed notifications, which can be recovered with listWriters.
    */
-  "sig":Uint8Array;
+  "prevSpaceRev"?:l.TidString };
+
+export type { RepoWrite };
+
+/** A repo in the space advanced to a new revision. */
+const repoWrite = /*#__PURE__*/ l.typedObject<RepoWrite>($nsid, "repoWrite", /*#__PURE__*/ l.object({"repo":/*#__PURE__*/ l.string({"format":"did"}),"repoRev":/*#__PURE__*/ l.string({"format":"tid"}),"data":/*#__PURE__*/ l.bytes(),"spaceRev":/*#__PURE__*/ l.string({"format":"tid"}),"prevSpaceRev":/*#__PURE__*/ l.optional(/*#__PURE__*/ l.string({"format":"tid"}))}));
+
+export { repoWrite };
+
+/** A repo was removed from the writer set. */
+type RepoRemoved = { $type?: "com.atproto.space.defs#repoRemoved";"repo":l.DidString;
 
   /**
-   * HMAC-SHA256 over hash, keyed by HKDF-SHA256(ikm, info=ctx). Binds the repo hash to this commit's context.
+   * The space revision at which this update was sequenced.
    */
-  "mac":Uint8Array;
+  "spaceRev":l.TidString;
 
   /**
-   * Commit revision (TID), also bound into ctx.
+   * The space revision before this update, if any. Set in notifySpaceUpdate, where a gap indicates missed notifications, which can be recovered with listWriters.
    */
-  "rev":l.TidString };
+  "prevSpaceRev"?:l.TidString };
 
-export type { SignedCommit };
+export type { RepoRemoved };
 
-/** A signed commit over the current state of a permissioned repo. */
-const signedCommit = /*#__PURE__*/ l.typedObject<SignedCommit>($nsid, "signedCommit", /*#__PURE__*/ l.object({"ver":/*#__PURE__*/ l.integer(),"hash":/*#__PURE__*/ l.bytes(),"ikm":/*#__PURE__*/ l.bytes(),"sig":/*#__PURE__*/ l.bytes(),"mac":/*#__PURE__*/ l.bytes(),"rev":/*#__PURE__*/ l.string({"format":"tid"})}));
+/** A repo was removed from the writer set. */
+const repoRemoved = /*#__PURE__*/ l.typedObject<RepoRemoved>($nsid, "repoRemoved", /*#__PURE__*/ l.object({"repo":/*#__PURE__*/ l.string({"format":"did"}),"spaceRev":/*#__PURE__*/ l.string({"format":"tid"}),"prevSpaceRev":/*#__PURE__*/ l.optional(/*#__PURE__*/ l.string({"format":"tid"}))}));
 
-export { signedCommit };
+export { repoRemoved };

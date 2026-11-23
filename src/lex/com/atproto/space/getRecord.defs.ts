@@ -19,8 +19,8 @@ export const $output = /*#__PURE__*/ l.jsonPayload({"uri":/*#__PURE__*/ l.string
 export type $Output<B = l.BinaryData> = l.InferPayload<typeof $output, B>;
 export type $OutputBody<B = l.BinaryData> = l.InferPayloadBody<typeof $output, B>;
 
-/** Get a single record from a permissioned space. Callable with either OAuth (for the authenticated user's own data) or a space credential (for syncing services). Throws RepoNotFound when the account holds no repo in the space; this does not distinguish a member that has never written from a non-member. */
-const main = /*#__PURE__*/ l.query($nsid, $params, $output, ["RecordNotFound","SpaceNotFound","RepoNotFound","RepoTakendown","RepoSuspended","RepoDeactivated"]);
+/** Get a single record from a space repo. Responses are authenticated with a MAC. Requires auth as the repo's account or with a space credential; implemented by PDS. */
+const main = /*#__PURE__*/ l.query($nsid, $params, $output, ["InvalidSpaceMac","RecordNotFound","SpaceNotFound","RepoNotFound","RepoTakendown","RepoSuspended","RepoDeactivated"]);
 
 export { main };
 

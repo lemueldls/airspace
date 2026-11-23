@@ -10,17 +10,17 @@ type $nsid = typeof $nsid;
 
 export { $nsid };
 
-export const $params = /*#__PURE__*/ l.params({"space":/*#__PURE__*/ l.string({"format":"uri"}),"repo":/*#__PURE__*/ l.string({"format":"did"}),"excludeValues":/*#__PURE__*/ l.optional(/*#__PURE__*/ l.withDefault(/*#__PURE__*/ l.boolean(), false))});
+export const $params = /*#__PURE__*/ l.params({"space":/*#__PURE__*/ l.string({"format":"uri"}),"repo":/*#__PURE__*/ l.string({"format":"did"})});
 
 export type $Params = l.InferOutput<typeof $params>;
 
-export const $output = /*#__PURE__*/ l.payload("application/vnd.ipld.car");
+export const $output = /*#__PURE__*/ l.payload("application/vnd.dasl.star");
 
 export type $Output<B = l.BinaryData> = l.InferPayload<typeof $output, B>;
 export type $OutputBody<B = l.BinaryData> = l.InferPayloadBody<typeof $output, B>;
 
-/** Download an account's permissioned repo within a space as a CAR file, for full-state recovery. The CAR declares two roots in order: the signed commit, then a DRISL (DAG-CBOR) index mapping '{collection}/{rkey}' to record CID. Record blocks follow, in the same canonical DAG-CBOR key order as the index (length-first, then bytewise). Blobs are not included and are fetched separately via getBlob. Served by a repo host. Callable with either OAuth (for the authenticated user's own data) or a space credential (for syncing services). */
-const main = /*#__PURE__*/ l.query($nsid, $params, $output, ["SpaceNotFound","RepoNotFound","RepoTakendown","RepoSuspended","RepoDeactivated"]);
+/** Download a space repo as a STAR file. Responses are authenticated with a MAC. Requires auth as the repo's account or with a space credential; implemented by PDS. */
+const main = /*#__PURE__*/ l.query($nsid, $params, $output, ["InvalidSpaceMac","SpaceNotFound","RepoNotFound","RepoTakendown","RepoSuspended","RepoDeactivated"]);
 
 export { main };
 

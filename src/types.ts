@@ -62,7 +62,7 @@ export interface PageQuery {
   limit?: number
   /** The `cursor` from the previous page. */
   cursor?: string
-  /** Oldest first. Records are newest first by default, because record keys are TIDs. */
+  /** Oldest first. Records are newest first by default, because record keys are TIDs. Spaces list newest first only. */
   reverse?: boolean
 }
 

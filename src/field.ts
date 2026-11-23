@@ -202,7 +202,7 @@ export interface SpaceSpec<C extends readonly string[] = readonly string[], K ex
   readonly type: 'space'
   readonly key: K
   readonly collections: C
-  readonly name?: string
+  readonly title?: string
   readonly description?: string
 }
 
@@ -213,7 +213,7 @@ export interface SpaceSpec<C extends readonly string[] = readonly string[], K ex
  */
 export function space<const C extends readonly string[], const K extends FriendlyKey = 'self'>(
   collections: C,
-  options: { key?: K, name?: string, description?: string } = {},
+  options: { key?: K, title?: string, description?: string } = {},
 ): SpaceSpec<C, ResolvedKey<K>> {
   const { key = 'self' as K, ...rest } = options
   return { type: 'space', key: resolveKey(key) as ResolvedKey<K>, collections, ...rest }
@@ -312,7 +312,7 @@ export function buildModel(namespace: string, model: Record<string, ModelSpec>):
         nsid,
         key: spec.key,
         collections: spec.collections.map(nsidOf),
-        ...(spec.name ? { name: spec.name } : {}),
+        ...(spec.title ? { title: spec.title } : {}),
         ...(spec.description ? { description: spec.description } : {}),
       } satisfies SpaceDeclaration
       continue

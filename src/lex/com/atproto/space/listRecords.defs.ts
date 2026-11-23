@@ -10,7 +10,7 @@ type $nsid = typeof $nsid;
 
 export { $nsid };
 
-export const $params = /*#__PURE__*/ l.params({"space":/*#__PURE__*/ l.string({"format":"uri"}),"repo":/*#__PURE__*/ l.string({"format":"did"}),"collection":/*#__PURE__*/ l.optional(/*#__PURE__*/ l.string({"format":"nsid"})),"limit":/*#__PURE__*/ l.optional(/*#__PURE__*/ l.withDefault(/*#__PURE__*/ l.integer({"minimum":1,"maximum":1000}), 50)),"cursor":/*#__PURE__*/ l.optional(/*#__PURE__*/ l.string()),"reverse":/*#__PURE__*/ l.optional(/*#__PURE__*/ l.boolean()),"excludeValues":/*#__PURE__*/ l.optional(/*#__PURE__*/ l.withDefault(/*#__PURE__*/ l.boolean(), false))});
+export const $params = /*#__PURE__*/ l.params({"space":/*#__PURE__*/ l.string({"format":"uri"}),"repo":/*#__PURE__*/ l.string({"format":"did"}),"collection":/*#__PURE__*/ l.optional(/*#__PURE__*/ l.string({"format":"nsid"})),"limit":/*#__PURE__*/ l.optional(/*#__PURE__*/ l.withDefault(/*#__PURE__*/ l.integer({"minimum":1,"maximum":1000}), 50)),"cursor":/*#__PURE__*/ l.optional(/*#__PURE__*/ l.string()),"excludeValues":/*#__PURE__*/ l.optional(/*#__PURE__*/ l.withDefault(/*#__PURE__*/ l.boolean(), false))});
 
 export type $Params = l.InferOutput<typeof $params>;
 
@@ -19,8 +19,8 @@ export const $output = /*#__PURE__*/ l.jsonPayload({"cursor":/*#__PURE__*/ l.opt
 export type $Output<B = l.BinaryData> = l.InferPayload<typeof $output, B>;
 export type $OutputBody<B = l.BinaryData> = l.InferPayloadBody<typeof $output, B>;
 
-/** List the records in an account's repo within a permissioned space, optionally filtered by collection. By default each record's value is inlined; set excludeValues for a metadata-only listing (collection, rkey, cid). Used for full-state recovery. Callable with either OAuth (for the authenticated user's own data) or a space credential (for syncing services). Throws RepoNotFound when the account holds no repo in the space; this does not distinguish a member that has never written from a non-member. */
-const main = /*#__PURE__*/ l.query($nsid, $params, $output, ["SpaceNotFound","RepoNotFound","RepoTakendown","RepoSuspended","RepoDeactivated"]);
+/** List records in a space repo, optionally filtered by collection. Requires auth as the repo's account or with a space credential; implemented by PDS. */
+const main = /*#__PURE__*/ l.query($nsid, $params, $output, ["SpaceNotFound","RepoNotFound","RepoTakendown","RepoSuspended","RepoDeactivated","InvalidCursor"]);
 
 export { main };
 
@@ -30,12 +30,7 @@ type $lxm = typeof $lxm;
 
 export { $lxm };
 
-type Record$0 = { $type?: "com.atproto.space.listRecords#record";"collection":l.NsidString;"rkey":l.RecordKeyString;"cid":l.CidString;
-
-  /**
-   * The record's value. Inlined by default; omitted when excludeValues is set.
-   */
-  "value"?:l.LexMap };
+type Record$0 = { $type?: "com.atproto.space.listRecords#record";"collection":l.NsidString;"rkey":l.RecordKeyString;"cid":l.CidString;"value"?:l.LexMap };
 
 export type { Record$0 as Record };
 

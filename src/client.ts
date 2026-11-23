@@ -28,7 +28,7 @@ type RefField = string | { uri?: string } | undefined
 
 type ListWithQuery<S extends RecordSchema, R extends Relations, K extends keyof R> = ListQuery<Value<S>> & { with: readonly K[] }
 
-/** One `listRecords` page. `records` are newest first unless `reverse` is set. */
+/** One `listRecords` page. `records` are newest first unless `reverse` is set. Spaces ignore `reverse`. */
 export interface RecordPage<S extends RecordSchema, M> {
   records: AirspaceRecord<S, M>[]
   /** Pass back as `cursor` for the next page. Absent on the last page. */

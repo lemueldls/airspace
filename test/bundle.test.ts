@@ -40,9 +40,9 @@ describe('bundle boundaries', () => {
 
   it('keeps the vendored com.atproto.space lexicons out of the eager chunks', async () => {
     const { eager, lazy } = await chunks(app)
-    expect(eager).not.toContain('com.atproto.simplespace')
+    expect(eager).not.toContain('com.atproto.space.createSpace')
     expect(eager).not.toContain('com.atproto.space.getRecord')
-    expect(lazy).toContain('com.atproto.simplespace.createSpace')
+    expect(lazy).toContain('com.atproto.space.createSpace')
   })
 
   it('loads the password session helper lazily', async () => {

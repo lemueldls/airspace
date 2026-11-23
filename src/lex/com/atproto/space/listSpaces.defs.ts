@@ -10,7 +10,7 @@ type $nsid = typeof $nsid;
 
 export { $nsid };
 
-export const $params = /*#__PURE__*/ l.params({"type":/*#__PURE__*/ l.optional(/*#__PURE__*/ l.string({"format":"nsid"})),"did":/*#__PURE__*/ l.optional(/*#__PURE__*/ l.string({"format":"did"})),"limit":/*#__PURE__*/ l.optional(/*#__PURE__*/ l.withDefault(/*#__PURE__*/ l.integer({"minimum":1,"maximum":100}), 50)),"cursor":/*#__PURE__*/ l.optional(/*#__PURE__*/ l.string())});
+export const $params = /*#__PURE__*/ l.params({"spaceDid":/*#__PURE__*/ l.optional(/*#__PURE__*/ l.string({"format":"did"})),"spaceType":/*#__PURE__*/ l.optional(/*#__PURE__*/ l.string({"format":"nsid"})),"limit":/*#__PURE__*/ l.optional(/*#__PURE__*/ l.withDefault(/*#__PURE__*/ l.integer({"minimum":1,"maximum":100}), 50)),"cursor":/*#__PURE__*/ l.optional(/*#__PURE__*/ l.string())});
 
 export type $Params = l.InferOutput<typeof $params>;
 
@@ -19,8 +19,8 @@ export const $output = /*#__PURE__*/ l.jsonPayload({"cursor":/*#__PURE__*/ l.opt
 export type $Output<B = l.BinaryData> = l.InferPayload<typeof $output, B>;
 export type $OutputBody<B = l.BinaryData> = l.InferPayloadBody<typeof $output, B>;
 
-/** List the spaces the authenticated user holds a repo in (i.e. spaces the user has written data to), optionally filtered by type and/or authority DID. Note this is not 'spaces I'm a member of' — a member's PDS only tracks spaces its user has written to. Requires auth, implemented by PDS. */
-const main = /*#__PURE__*/ l.query($nsid, $params, $output);
+/** List spaces that the authenticated account has written to or is the authority for. Requires auth, implemented by PDS. */
+const main = /*#__PURE__*/ l.query($nsid, $params, $output, ["InvalidCursor"]);
 
 export { main };
 
@@ -30,15 +30,25 @@ type $lxm = typeof $lxm;
 
 export { $lxm };
 
-type SpaceView = { $type?: "com.atproto.space.listSpaces#spaceView";
+type SpaceView = { $type?: "com.atproto.space.listSpaces#spaceView";"space":l.UriString;
 
   /**
-   * URI of the space.
+   * The current revision of the account's repo in the space, if it has one.
    */
-  "uri":l.UriString };
+  "repoRev"?:l.TidString;
+
+  /**
+   * The current commit data of the account's repo in the space, if it has one.
+   */
+  "data"?:Uint8Array;
+
+  /**
+   * The current revision of the space. Only included if the account is the space's authority.
+   */
+  "spaceRev"?:l.TidString };
 
 export type { SpaceView };
 
-const spaceView = /*#__PURE__*/ l.typedObject<SpaceView>($nsid, "spaceView", /*#__PURE__*/ l.object({"uri":/*#__PURE__*/ l.string({"format":"uri"})}));
+const spaceView = /*#__PURE__*/ l.typedObject<SpaceView>($nsid, "spaceView", /*#__PURE__*/ l.object({"space":/*#__PURE__*/ l.string({"format":"uri"}),"repoRev":/*#__PURE__*/ l.optional(/*#__PURE__*/ l.string({"format":"tid"})),"data":/*#__PURE__*/ l.optional(/*#__PURE__*/ l.bytes()),"spaceRev":/*#__PURE__*/ l.optional(/*#__PURE__*/ l.string({"format":"tid"}))}));
 
 export { spaceView };

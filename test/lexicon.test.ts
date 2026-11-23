@@ -45,7 +45,7 @@ const lexicons = defineLexicons({
       createdAt: l.string({ format: 'datetime' }),
     }),
   }),
-  'dev.example.studio': l.space({ key: 'literal:self', name: 'Studio', description: 'Drafts.', collections: ['dev.example.project'] }),
+  'dev.example.studio': l.space({ key: 'literal:self', title: 'Studio', description: 'Drafts.', collections: ['dev.example.project'] }),
 })
 
 describe('defineLexicons', () => {
@@ -60,7 +60,7 @@ describe('defineLexicons', () => {
     expectTypeOf<Infer<typeof badge>['colour']>().toEqualTypeOf<'red' | 'green' | (string & NonNullable<unknown>) | undefined>()
     expectTypeOf<Infer<typeof project>['createdAt']>().toEqualTypeOf<lex.DatetimeString>()
 
-    expect(lexicons['dev.example.studio']).toEqual({ nsid: 'dev.example.studio', key: 'literal:self', name: 'Studio', description: 'Drafts.', collections: ['dev.example.project'] })
+    expect(lexicons['dev.example.studio']).toEqual({ nsid: 'dev.example.studio', key: 'literal:self', title: 'Studio', description: 'Drafts.', collections: ['dev.example.project'] })
     expectTypeOf(lexicons['dev.example.studio'].key).toEqualTypeOf<'literal:self'>()
     expect(lexicons['dev.example.defs'].badge).toBe(badge)
     expect(lexicons['dev.example.defs'].featured.value).toBe('dev.example.defs#featured')
@@ -130,7 +130,7 @@ describe('toLexiconJson', () => {
       },
     })
     expect(byId['dev.example.studio']!.defs).toEqual({
-      main: { type: 'space', key: 'literal:self', name: 'Studio', description: 'Drafts.', collections: ['dev.example.project'] },
+      main: { type: 'space', key: 'literal:self', title: 'Studio', description: 'Drafts.', collections: ['dev.example.project'] },
     })
   })
 

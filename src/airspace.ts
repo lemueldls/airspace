@@ -81,7 +81,7 @@ interface SpaceClientBase<C extends Record<string, AnyCollection>, G> {
   readonly collections: SpaceCollectionClients<C, G>
   /** Several writes in one commit, validated before anything is sent. */
   batch: Batch<C>
-  /** `com.atproto.simplespace` management; the authority must be the session's own DID. */
+  /** `com.atproto.space` management; the authority must be the session's own DID. */
   readonly manage: SpaceManager
   blobs: {
     url: (blob: unknown) => Promise<string | null>
@@ -348,6 +348,8 @@ export function createAirspace<
           add: async (did, access) => (await manager()).members.add(did, access),
           remove: async did => (await manager()).members.remove(did),
         },
+        removeWriter: async did => (await manager()).removeWriter(did),
+        clearRecords: async () => (await manager()).clearRecords(),
       },
       blobs: {
         url: async blob => (await backend()).blobUrl(blob),

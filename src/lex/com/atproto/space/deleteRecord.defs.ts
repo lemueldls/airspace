@@ -24,7 +24,7 @@ export const $output = /*#__PURE__*/ l.jsonPayload({});
 export type $Output<B = l.BinaryData> = l.InferPayload<typeof $output, B>;
 export type $OutputBody<B = l.BinaryData> = l.InferPayloadBody<typeof $output, B>;
 
-/** Delete a record from a permissioned space, or ensure it doesn't exist. Succeeds whether or not the record was present. Requires auth, implemented by PDS. */
+/** Delete a record from a space repo, or ensure it doesn't exist. Requires auth, implemented by PDS. */
 const main = /*#__PURE__*/ l.procedure($nsid, $params, $input, $output, ["SpaceNotFound"]);
 
 export { main };

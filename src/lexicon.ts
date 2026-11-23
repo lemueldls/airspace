@@ -41,7 +41,7 @@ export interface SpaceDef<K extends string = string> {
   readonly type: 'space'
   readonly key: K
   readonly collections?: readonly string[]
-  readonly name?: string
+  readonly title?: string
   readonly description?: string
 }
 
@@ -76,7 +76,7 @@ export const l: {
   /** See `permissions()`. */
   permissionSet: (options?: PermissionSetOptions) => PermissionSetSpec
   record: <const K extends LexiconRecordKey, const S extends Validator<LexMap>>(def: { key: K, record: S, description?: string }) => RecordDef<K, S>
-  space: <const K extends string>(def: { key: K, collections?: readonly string[], name?: string, description?: string }) => SpaceDef<K>
+  space: <const K extends string>(def: { key: K, collections?: readonly string[], title?: string, description?: string }) => SpaceDef<K>
 } = {
   string: (options) => {
     const [rest, description] = split(options)
