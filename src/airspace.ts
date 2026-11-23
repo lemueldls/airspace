@@ -10,7 +10,7 @@ import type { ImageSource, ResolvedImage } from './community.ts'
 import type { IdentityInput } from './identity.ts'
 import type { AnyCollection, AnySpace, SpaceCollections } from './model.ts'
 import type { AnyPlugin, MergeMeta, UnionToIntersection } from './plugin.ts'
-import type { SpaceManager } from './space.ts'
+import type { SpaceManager, SpaceReader, SpaceReaderOptions } from './space.ts'
 import type { AirspaceRecord, Identity, UnknownRecord } from './types.ts'
 import { Client } from '@atproto/lex-client'
 import { jsonToLex, lexToJson } from '@atproto/lex-json'
@@ -83,6 +83,8 @@ interface SpaceClientBase<C extends Record<string, AnyCollection>, G> {
   batch: Batch<C>
   /** `com.atproto.space` management; the authority must be the session's own DID. */
   readonly manage: SpaceManager
+  /** Read any repo in the space with a space credential. */
+  reader: (options?: SpaceReaderOptions) => Promise<SpaceReader>
   blobs: {
     url: (blob: unknown) => Promise<string | null>
     image: (image: ImageSource | undefined | null) => Promise<ResolvedImage | null>
@@ -350,6 +352,10 @@ export function createAirspace<
         },
         removeWriter: async did => (await manager()).removeWriter(did),
         clearRecords: async () => (await manager()).clearRecords(),
+      },
+      async reader(options) {
+        const authorityDid = await authority()
+        return (await spaceLib()).createSpaceReader(def, authorityDid, (await identity()).did, scopedClient(await spaceClient()), options)
       },
       blobs: {
         url: async blob => (await backend()).blobUrl(blob),

@@ -1,9 +1,11 @@
 import type { Client } from '@atproto/lex-client'
-import type { DidString, RecordSchema } from '@atproto/lex-schema'
+import type { DidString, NsidString, RecordSchema } from '@atproto/lex-schema'
+import type { AtprotoDidResolver, SpaceReader as LexSpaceReader, SpaceRefString } from '@atproto/lex-space'
 import type { Backend, RawRecord, SpaceUri, WriteRef } from './backend.ts'
 import type { Space } from './model.ts'
 import { XrpcResponseError } from '@atproto/lex-client'
-import { LexValidationError } from '@atproto/lex-schema'
+import { l, LexValidationError } from '@atproto/lex-schema'
+import { delegationTokenProviderFor, SpaceReader as LexSpaceReaderClass } from '@atproto/lex-space'
 import { isNotFound, PAGE, paginate, readOnly, scoped, spaceUri } from './backend.ts'
 import { cidFromBlob } from './blob.ts'
 import { SpacesUnsupportedError, ValidationError } from './errors.ts'
@@ -353,4 +355,50 @@ export function createSpaceManager(space: Space, authority: DidString, client: C
       await require().call(com.atproto.space.clearRecords, { space: uri, repo: authority })
     },
   }
+}
+
+/** The read methods of a space reader. Writes stay on the caller's own repo. */
+export type SpaceReader = Pick<
+  LexSpaceReader,
+  | 'uri'
+  | 'listWriters'
+  | 'writers'
+  | 'listRecords'
+  | 'getRecord'
+  | 'getLatestCommit'
+  | 'listRepoOps'
+  | 'getRepo'
+  | 'listBlobs'
+  | 'getBlob'
+>
+
+export interface SpaceReaderOptions {
+  /** Used for DID resolution and cross-repo requests. Defaults to global fetch. */
+  fetch?: typeof globalThis.fetch
+  /** Resolve DIDs through a local PLC in development. */
+  didResolver?: AtprotoDidResolver
+  /** For spaces that only authorize named apps. */
+  clientAttestationProvider?: LexSpaceReader.Options['clientAttestationProvider']
+}
+
+/**
+ * Reads any repo in a space with a space credential. The client's session is
+ * used for the delegation token; without one, only public spaces are readable.
+ */
+export function createSpaceReader(
+  space: Space,
+  authority: DidString,
+  account: DidString,
+  client: Client | undefined,
+  options: SpaceReaderOptions = {},
+): SpaceReader {
+  const collections = Object.values(space.collections).map(collection => collection.schema)
+  // The reader validates records against these schemas at runtime.
+  const schema = l.space('any', space.type, collections as unknown as readonly NsidString[])
+  return LexSpaceReaderClass.openSpace(schema, spaceUri(authority, space.type, space.skey) as SpaceRefString, {
+    ...options,
+    delegationTokenProvider: client
+      ? delegationTokenProviderFor({ did: account, fetchHandler: client.agent.fetchHandler })
+      : undefined,
+  })
 }

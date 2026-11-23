@@ -1,5 +1,6 @@
 blockExoticSubdeps: false
 
+minimumReleaseAgeExcludePrune: true
 minimumReleaseAgeExclude:
   - '@comark/vue@0.7.0'
   - comark@0.7.0
@@ -29,6 +30,7 @@ minimumReleaseAgeExclude:
   - '@atproto/lex-password-session@0.0.0-spaces-alpha-20261117141222'
   - '@atproto/lex-resolver@0.0.0-spaces-alpha-20261117141222'
   - '@atproto/lex-schema@0.0.0-spaces-alpha-20261117141222'
+  - '@atproto/lex-space@0.0.0-spaces-alpha-20261117141222'
   - '@atproto/lex@0.0.0-spaces-alpha-20261117141222'
   - '@atproto/lexicon@0.0.0-spaces-alpha-20261117141222'
   - '@atproto/oauth-provider-api@0.0.0-spaces-alpha-20261117141222'
@@ -88,6 +90,7 @@ overrides:
   '@atproto/lex-password-session@^0.0.0-spaces-alpha-20261117141222': 0.0.0-spaces-alpha-20261117141222
   '@atproto/lex-resolver@^0.0.0-spaces-alpha-20261117141222': 0.0.0-spaces-alpha-20261117141222
   '@atproto/lex-schema@^0.0.0-spaces-alpha-20261117141222': 0.0.0-spaces-alpha-20261117141222
+  '@atproto/lex-space@^0.0.0-spaces-alpha-20261117141222': 0.0.0-spaces-alpha-20261117141222
   '@atproto/lex@^0.0.0-spaces-alpha-20261117141222': 0.0.0-spaces-alpha-20261117141222
   '@atproto/lexicon@^0.0.0-spaces-alpha-20261117141222': 0.0.0-spaces-alpha-20261117141222
   '@atproto/oauth-provider-api@^0.0.0-spaces-alpha-20261117141222': 0.0.0-spaces-alpha-20261117141222
